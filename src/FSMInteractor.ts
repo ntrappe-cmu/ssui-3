@@ -11,6 +11,11 @@
 // Revision history
 // v1.0a  Initial version                 Scott Hudson  10/23
 //
+// NOTE: Owns position (x,y) and reference to FSM
+// * Translates raw events (press/move/release) into high-level events
+//   (enter/exit/move_inside)
+// * Maintains stte
+// * Calls pick to determine which regions contin mouse
 //===================================================================
 
 import { Root } from "./Root.js";
@@ -22,13 +27,13 @@ import { Err } from "./Err.js";
 // Class for an interactive object controlled by a finite state machine (FSM).
 // Objects of this class have a position on the screen (the location of their top-left
 // corner within the HTML canvas object associated with thier parent (Root) object), 
-// Along with an FSM object which specifies, and partially imlements, their behavior.
+// Along with an FSM object which specifies, and partially implements, their behavior.
 // This class is repsonsible for using the FSM object to draw all the current region 
 // images within the FSM, and for dispatching events to the FSM to drive its behavior.
 // Note that this object has a position, but not an explicit size, and that no clipping
 // of its output is being done.  Regions within the FSM are positioned in the coordinate
 // system of this object (i.e., WRT its top-left corner), and have a size that 
-// establishes a bouding box for input purposes (i.e., indicateing which event positions 
+// establishes a bouding box for input purposes (i.e., indicating which event positions 
 // are considered "inside" or "over" the region for input purposes).  However, region 
 // image displays are not not limited to that bounding box and are not clipped (except 
 // by the containing HTML canvas object).  See the FSM and Root classes for more details.
@@ -50,6 +55,11 @@ export class FSMInteractor {
     //-------------------------------------------------------------------
     // Properties
     //-------------------------------------------------------------------
+
+    // NOTE: No generic damage like in P2 because item would have to know 
+    // about root (coupled!), have access to canvas, and handle batch logic
+
+    protected _pastRegions :Region[] = [];
   
     // X position (left) of this object within the parent Root object (and containing 
     // HTML canvas)
@@ -58,6 +68,12 @@ export class FSMInteractor {
     public set x(v : number) {
           
         // **** YOUR CODE HERE ****
+        // If we actually changed, set the new values and declare damage on our
+        // parent so damage report propogates up the tree
+        if (v !== this._x) {
+            this._x = v;
+            this.parent?.damage();
+        }
     }
 
     // Y position (top) of this object within the parent Root object (and containing 
@@ -67,6 +83,11 @@ export class FSMInteractor {
     public set y(v : number) {
             
         // **** YOUR CODE HERE ****
+        // If we actually changed, set the new values and declare damage on parent
+        if (v !== this._y) {
+            this._y = v;
+            this.parent?.damage();
+        }
     }
 
     // Position treated as a single value
@@ -91,6 +112,14 @@ export class FSMInteractor {
     public set parent(v : Root | undefined) {
             
         // **** YOUR CODE HERE ****
+        // NOTE: SPECIAL SETTER AND ONLY PLACE WITH TWO DAMAGE CALLS
+        // If we actually changed, call damage on old parent (- child) then
+        // set new parent and call damage so it gets a redraw (+ child)
+        if (v !== this.parent) {
+            this.parent?.damage();
+            this._parent = v;
+            this.parent?.damage();
+        }
     }
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
@@ -111,12 +140,15 @@ export class FSMInteractor {
     public damage() {
            
         // **** YOUR CODE HERE ****
+        // Report damage until we hit the root which has access to the canvas to
+        // take in the report and force a redraw down the tree
+        this.parent?.damage();
     }
     
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
     // Draw the display for this object using the given drawing context object.  If the
-    // showDegugging parameter is passed as true, additional drawing for debugging 
+    // showDebugging parameter is passed as true, additional drawing for debugging 
     // purposes (e.g., a black frame showing the bounding box of every region) is 
     // requsted.  See Region.draw() for more details.
     public draw(ctx : CanvasRenderingContext2D, showDebugging : boolean = false) {
@@ -124,6 +156,13 @@ export class FSMInteractor {
         if (!this.fsm) return;
 
         // **** YOUR CODE HERE ****
+        // We have a number of regions so need to iterate over them 
+        for (let region of this.fsm.regions) {
+            ctx.save(); // Have a state to go back to if exception thrown
+            ctx.translate(region.x, region.y); // Convert to child coords
+            region.draw(ctx, showDebugging); // Pass on to child to handle
+            ctx.restore(); // Back to saved state
+        }
     }   
 
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -143,6 +182,13 @@ export class FSMInteractor {
         if (!this.fsm) return pickList;
            
         // **** YOUR CODE HERE ****
+        // Iterate over the list of regions but in reverse order so that kids not covered
+        for (let i = this.fsm.regions.length - 1; i >= 0; i--) {
+            const region = this.fsm.regions[i];
+            // Convert to local coordinates (using handy function)
+            if (region.pick(localX - region.x, localY - region.y))
+                pickList.push(region);
+        }
 
         return pickList;
     }
@@ -177,6 +223,42 @@ export class FSMInteractor {
         if (this.fsm === undefined) return;
 
         // **** YOUR CODE HERE ****
+        // Find regions under cursor now
+        const regionsList = this.pick(localX, localY);
+        // For each event type:
+        switch (what) {
+            case 'press':
+                // Dispatch press for each region in pick list
+                for (const region of regionsList)
+                    this.fsm.actOnEvent('press', region);
+                break;
+            case 'release':
+                // Dispatch release if we have a region, otherwise,
+                // release_none because we don't have a region
+                if (regionsList.length === 0) {
+                    this.fsm.actOnEvent('release_none', undefined);
+                } else {
+                    for (const region of regionsList)
+                        this.fsm.actOnEvent('release', region);
+                }
+                break;
+            case 'move':
+                // Determine exited regions (in past but not now)
+                for (const pastRegion of this._pastRegions) {
+                    if (!regionsList.includes(pastRegion))
+                        this.fsm.actOnEvent('exit', pastRegion);
+                }
+                // Determine entered regions (in now but not past)
+                for (const region of regionsList) {
+                    if (!this._pastRegions.includes(region))
+                        this.fsm.actOnEvent('enter', region);
+                }
+                // Dispatch move_inside for each region in pick list
+                for (const region of regionsList)
+                    this.fsm.actOnEvent('move_inside', region);
+                break;
+        }
+        this._pastRegions = regionsList;
     }
 
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .

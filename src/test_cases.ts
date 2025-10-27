@@ -28,6 +28,9 @@ export function runTests() {
 	test1();
 	test2();
 	test3();
+	test4();
+	test5();
+	test6();
 
 	console.log("Test is set up...");
 }
@@ -73,6 +76,27 @@ function test3() {
 	let fsmInt = new FSMInteractor(undefined, 400,0);
 	root.addChild(fsmInt);
 	fsmInt.startLoadFromJson("./fsm_json/stick.json");
+}
+
+// Add a checkbox
+function test4() {
+	let fsmInt = new FSMInteractor(undefined, 0, 350);
+	root.addChild(fsmInt);
+	fsmInt.startLoadFromJson("./fsm_json/checkbox.json");
+}
+
+// Add 3 radio buttons
+function test5() {
+	let fsmInt = new FSMInteractor(undefined, 50, 500);
+	root.addChild(fsmInt);
+	fsmInt.startLoadFromJson("./fsm_json/radio_buttons.json");
+}
+
+// Single button
+function test6() {
+	let fsmInt = new FSMInteractor(undefined, 150, 500);
+	root.addChild(fsmInt);
+	fsmInt.startLoadFromJson("./fsm_json/button.json");
 }
 
 //-------------------------------------------------------------------

@@ -85,6 +85,16 @@ export class EventSpec {
         }
      
         // **** YOUR CODE HERE ****
+        // For each type of region in our list, check for a match
+        for (let region of regionList) {
+            // Found a match --> assign region object and done
+            if (region.name === this._regionName) {
+                this._region = region;
+                return;
+            }
+        }
+        // If not found, then mark it as undefined
+        this._region = undefined;
 
         // we didn't match any region, that's ok for some forms that don't need a region
         if (this.evtType === 'nevermatch') return;
@@ -102,11 +112,28 @@ export class EventSpec {
     // by an event type (evtType) and an optional associated region (regn).  If 
     // our region is undefined and region name is "*", we will match to any region.
     public match(evtType : EventType, regn? : Region) : boolean {
-          
-        // **** YOUR CODE HERE ****
+        // Nevermatch never matches
+        if (this.evtType === 'nevermatch') return false;
 
-        // **** Remove this: just here to get it to compile... ****
-        return false;
+
+        // Make sure event type matches
+        if (this.evtType === 'any') {
+            // Matches all event types so fall through to next step
+        } else if (this.evtType === 'release_none') {
+            // If matches release or release-none then fall through to next step
+            if (evtType !== 'release' && evtType !== 'release_none') return false;
+        } else {
+            // If we have an exact event type match, fall through
+            if (this.evtType !== evtType) return false;
+        }
+
+        // Fall through: now check region matching
+        // (A) Wildcard always matches
+        if (this.regionName === '*') return true;
+        // (B) If empty there's no region to match so rely on associated region
+        if (this.regionName === '') return (regn === undefined);
+        // (C) Bounded named region must match
+        return (this.region === regn);
     }
     
     //-------------------------------------------------------------------

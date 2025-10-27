@@ -1,0 +1,96 @@
+{
+    "regions": [
+        {
+            "name": "button_region",
+            "x": 0, "y": 0, "w": 124, "h": 56, 
+            "imageLoc": "./images/default_button.png"
+        }
+    ],
+    "states": [
+        {
+            "name" : "default",
+            "transitions" : [
+                {
+                    "onEvent": {
+                        "evtType" : "press",
+                        "region" : "button_region"
+                    },
+                    "target" : "hover",
+                    "actions" : [
+                        {
+                            "act": "set_image",
+                            "region": "button_region",
+                            "param": "./images/hover_button.png"
+                        }
+                    ]
+                },
+                {
+                    "onEvent": {
+                        "evtType" : "move_inside",
+                        "region" : "button_region"
+                    },
+                    "target" : "hover",
+                    "actions" : [
+                        {
+                            "act": "set_image",
+                            "region": "button_region",
+                            "param": "./images/hover_button.png"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name" : "hover",
+            "transitions" : [
+                {
+                    "onEvent": {
+                        "evtType" : "release",
+                        "region" : "button_region"
+                    },
+                    "target" : "active",
+                    "actions" : [
+                        {
+                            "act": "set_image",
+                            "region": "button_region",
+                            "param": "./images/active_button.png"
+                        }
+                    ]
+                },
+                {
+                    "onEvent": {
+                        "evtType" : "exit",
+                        "region" : "button_region"
+                    },
+                    "target" : "default",
+                    "actions" : [
+                        {
+                            "act": "set_image",
+                            "region": "button_region",
+                            "param": "./images/default_button.png"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name" : "active",
+            "transitions" : [
+                {
+                    "onEvent": {
+                        "evtType" : "release_none",
+                        "region" : "button_region"                    
+                    },
+                    "target" : "default",
+                    "actions" : [
+                        {
+                            "act": "set_image",
+                            "region": "button_region",
+                            "param": "./images/default_button.png"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

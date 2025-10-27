@@ -84,6 +84,22 @@ export class Action {
         if (this._actType === 'none') return;
         
         // **** YOUR CODE HERE ****
+        switch (this._actType) {
+            case 'set_image':  // If valid region, set image path to param
+                if (this._onRegion)
+                    this._onRegion.imageLoc = this._param;
+                break;
+            case 'clear_image':  // If valid region, set the image path to nothing
+                if (this._onRegion)
+                    this._onRegion.imageLoc = "";
+                break;
+            case 'print':   // Just print parameter
+                console.log(this._param);      
+                break;
+            case 'print_event':  // Print parameter and event details
+                console.log(this._param, evtType, evtReg?.name ?? "none");
+                break;
+        }
     }
 
      //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -93,6 +109,16 @@ export class Action {
     public bindRegion(regionList : readonly Region[]) : void {
             
         // **** YOUR CODE HERE ****
+        // Search for matching region
+        for (let region of regionList) {
+            // Found a match --> assign region object and done
+            if (region.name === this.onRegionName) {
+                this._onRegion = region;
+                return;
+            }
+        }
+        // If not found, then mark it as undefined
+        this._onRegion = undefined;
         
         // ok to have no matching region for some actions
         if (this.actType === 'none' || this.actType === 'print' || 

@@ -7,6 +7,12 @@ import { Err } from "./Err.js";
 // HTML canvas and performs other global tasks (like invoking redraws) for the system.
 // This object maintains a list of child (FSMInteractor) objects which it collects
 // damage notifications from, arranges to be drawn, and dispatches input to.
+//
+// NOTE: Owns HTML canvas, list of FSMInterator children.
+// * Captures raw mouse movements
+// * Converts canvas coords to child and dispatches to children
+// * Manages draw/redraw cycle
+// * Clears canvas and calls draw
 //===================================================================
 
 export class Root {
@@ -74,6 +80,20 @@ export class Root {
         try {
 
         // **** YOUR CODE HERE ****
+        const ctx = this.canvasContext;
+        // clear the entire canvas
+        ctx.clearRect(0, 0, this.owningCanvas.width, this.owningCanvas.height);
+        // draw each child in its own local coordinate system
+        for (let child of this.children) {
+            ctx.save(); try {
+                ctx.translate(child.x, child.y);
+                child.draw(ctx, this._doDebugOutput);
+            } finally {
+                // in case it throw an exception which could cause uneven clipping
+                // if dont do this, context will always have something it shouldn't have
+                ctx.restore();
+            }
+        }
 
         // currently, for ease of debugging, we let exceptions propogate out from this 
         // redraw (and typically all the out of our code).  this will basically shut 
@@ -236,7 +256,7 @@ export class Root {
     // Utility method to pull out the canvas with the given id and extract 
     // its drawing context (which has a reference back to that canvas in it)
     protected _getCanvasContext(canvasID : string) : CanvasRenderingContext2D {
-        // type guards to let us deal with HTML objects in a type safe fasion
+        // type guards to let us deal with HTML objects in a type safe fashion
         function isHTMLCanvasElement(canv : any) : canv is HTMLCanvasElement {
             return (canv && (canv instanceof HTMLCanvasElement));
         }

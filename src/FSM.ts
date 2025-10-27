@@ -20,7 +20,7 @@ import { Action } from "./Action.js";
 // * States each have state name and a list of transitions out of the state.  The start
 //   state for the FSM will always be the first state given in the state list. See the 
 //   State class for additional details.  
-//   - Transistions out of a state contaions three components: an EventSpec object which
+//   - Transitions out of a state contains three components: an EventSpec object which
 //     describes what events will cause the event to be "taken" (or "fire"), a target 
 //     state that the transition will take the machine to, and a list of actions to be 
 //     executed when the transition is taken.  See the Transition class for additional 
@@ -45,6 +45,12 @@ import { Action } from "./Action.js";
 //   the erroneous value is replaced with a default value of the right type to patch up 
 //   the data structure.  This will leave the data structure correctly types, but likely 
 //   not fully functional as an FSM.  
+//
+// NOTE: Owns regions, states, and current state pointer
+// * Initializes by binding names to objects
+// * Processes high level events (finds matching transition, execute actions,
+//   change to target state)
+// * Propogates damage upward to FSMInteractor
 //===================================================================
 
 // Type we are expecting to recieve from decoding an FSM from a .json file
@@ -167,7 +173,8 @@ export class FSM {
     public damage() : void {
             
         // **** YOUR CODE HERE ****
-
+        // Propagate damage up to parent until we reach the top
+        this._parent?.damage();
     }
 
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -184,13 +191,27 @@ export class FSM {
         // **** YOUR CODE HERE ****
 
         // start state is the first one
+        this._startState = this.states[0];
+        
             
         // **** YOUR CODE HERE ****
+        // Iterate over all states and their transitions to bind targets, regions,
+        // and actions
+        for (let st of this.states) {
+            for (let trans of st.transitions) {
+                trans.bindTarget(this.states);
+                trans.onEvent.bindRegion(this.regions);
+                for (let act of trans.actions) {
+                    act.bindRegion(this.regions);
+                }
+            }
+        }
 
         // need to link all regions back to this object as their parent
-            
         // **** YOUR CODE HERE ****
-
+        for (let reg of this.regions) {
+            reg.parent = this;
+        }
     }
     
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -200,6 +221,7 @@ export class FSM {
     public reset() {
             
         // **** YOUR CODE HERE ****
+        this._currentState = this._startState;
     }
     
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -207,7 +229,7 @@ export class FSM {
     // Cause the FSM to act on the given event: represented by an event type (see 
     // EventType declared with the EventSpec class) and a region (when the event type
     // needs one).  This method attempts to make one transition in the FSM.  The first
-    // transition matching the given event is found, the transitin is "taken" (it's 
+    // transition matching the given event is found, the transition is "taken" (it's 
     // actions are executed, and the FSM moves to the indicated state).  At that point
     // the event is considered "consumed", and no additional transitions are considered.
     public actOnEvent(evtType : EventType, reg? : Region) {
@@ -215,6 +237,19 @@ export class FSM {
         if (!this.currentState) return;
            
         // **** YOUR CODE HERE ****
+        // Check each transition in current state for a match
+        for (let trans of this.currentState.transitions) {
+            // For the first transition match, take it by performing action
+            if (trans.match(evtType, reg)) {
+                // Execute all actions for this transition
+                for (let act of trans.actions) {
+                    act.execute(evtType, reg);
+                }
+                // Change state
+                this._currentState = trans.target;
+                return; // Done after taking first matching transition
+            }
+        }
 
     }
       

@@ -93,6 +93,12 @@ export class Region {
     public set x(v : number) {
             
         // **** YOUR CODE HERE ****
+        // If we actually changed, update our x coord and call damage on ourselves
+        // (unlike FSMInteractor) because we might need additional logic 
+        if (v !== this._x) {
+            this._x = v;
+            this.damage();
+        }
     }
        
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -103,6 +109,12 @@ export class Region {
     public set y(v : number) {
             
         // **** YOUR CODE HERE ****
+        // If we actually changed, update our y coord and call damage on ourselves
+        // (unlike FSMInteractor) because we might need additional logic 
+        if (v !== this._y) {
+            this._y = v;
+            this.damage();
+        }
     }   
 
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -114,6 +126,12 @@ export class Region {
     public set w(v : number) {
             
         // **** YOUR CODE HERE ****
+        // If we actually changed, update our width and call damage on ourselves
+        // because we need to be redrawn
+        if (v !== this._w) {
+            this._w = v;
+            this.damage();
+        }
     }  
 
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -125,6 +143,12 @@ export class Region {
     public set h(v : number) {
             
         // **** YOUR CODE HERE ****
+        // If we actually changed, update our height and call damage on ourselves
+        // because we need to be redrawn
+        if (v !== this._h) {
+            this._w = v;
+            this.damage();
+        }
     }  
 
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
@@ -156,6 +180,15 @@ export class Region {
     public set parent(v : FSM | undefined) {
             
         // **** YOUR CODE HERE ****
+        // Old parent might have lost the region so declare damage so it can
+        // be redrawn, then set new parent, and since new gains this region,
+        // it needs to be redrawn
+        if (v !== this._parent) {
+            this._parent?.damage();     // Old parent
+            this._parent = v;
+            this._parent?.damage();     // New parent
+        }
+
     }
 
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -219,14 +252,15 @@ export class Region {
     public pick(localX : number, localY : number) : boolean {
             
         // **** YOUR CODE HERE ****
-        
-        // **** Remove this, it's just here to make this compile as-is
-        return false;
+        // Tests if the point is inside the region's bounding box (in local coord syst
+        // where the top-left is 0,0)
+        return localX >= 0 && localX < this.w &&
+               localY >= 0 && localY < this.h;
     }
 
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-    // Draw the image for this region using the givn drawing context.  The context 
+    // Draw the image for this region using the given drawing context.  The context 
     // should be set up in the local coordinate system of the region (so 0,0 appears
     // at this.x, this.y in the parent canvas).  If the image to be drawn is empty or
     // not yet loaded, or had an error loading, then drawing of the image will not
@@ -237,14 +271,16 @@ export class Region {
         if (this.loaded && !this.loadError && this.image) {
                
             // **** YOUR CODE HERE ****
+            // Draws image at (0,0) in local coords
+            ctx.drawImage(this.image, 0, 0);
 
         }
         
         //draw a frame indicating the (input) bounding box if requested
         if (showDebugFrame) {
             ctx.save();
-                ctx.strokeStyle = 'black';
-                ctx.strokeRect(0, 0, this.w, this.h);
+            ctx.strokeStyle = 'black';
+            ctx.strokeRect(0, 0, this.w, this.h);
             ctx.restore();
         }
     }
@@ -257,6 +293,8 @@ export class Region {
     public damage() {
             
         // **** YOUR CODE HERE ****
+        // Propogate damage to parent if allowed since this needs to get to root later
+        this._parent?.damage();
     }
 
     //. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .

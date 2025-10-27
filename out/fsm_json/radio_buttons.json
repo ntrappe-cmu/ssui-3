@@ -1,0 +1,93 @@
+{
+    "regions": [
+        {
+            "name": "radio1",
+            "x": 0,
+            "y": 0,
+            "w": 40,
+            "h": 40,
+            "imageLoc": "./images/selected.png"
+        },
+        {
+            "name": "radio2",
+            "x": 0,
+            "y": 50,
+            "w": 40,
+            "h": 40,
+            "imageLoc": "./images/unselected.png"
+        },
+        {
+            "name": "radio3",
+            "x": 0,
+            "y": 100,
+            "w": 40,
+            "h": 40,
+            "imageLoc": "./images/unselected.png"
+        }
+    ],
+    "states": [
+        {
+            "name": "radio1_selected",
+            "transitions": [
+                {
+                    "onEvent": {"evtType": "press", "region": "radio2"},
+                    "target": "radio2_selected",
+                    "actions": [
+                        {"act": "set_image", "region": "radio1", "param": "./images/unselected.png"},
+                        {"act": "set_image", "region": "radio2", "param": "./images/selected.png"}
+                    ]
+                },
+                {
+                    "onEvent": {"evtType": "press", "region": "radio3"},
+                    "target": "radio3_selected",
+                    "actions": [
+                        {"act": "set_image", "region": "radio1", "param": "./images/unselected.png"},
+                        {"act": "set_image", "region": "radio3", "param": "./images/selected.png"}
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "radio2_selected",
+            "transitions": [
+                {
+                    "onEvent": {"evtType": "press", "region": "radio1"},
+                    "target": "radio1_selected",
+                    "actions": [
+                        {"act": "set_image", "region": "radio2", "param": "./images/unselected.png"},
+                        {"act": "set_image", "region": "radio1", "param": "./images/selected.png"}
+                    ]
+                },
+                {
+                    "onEvent": {"evtType": "press", "region": "radio3"},
+                    "target": "radio3_selected",
+                    "actions": [
+                        {"act": "set_image", "region": "radio2", "param": "./images/unselected.png"},
+                        {"act": "set_image", "region": "radio3", "param": "./images/selected.png"}
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "radio3_selected",
+            "transitions": [
+                {
+                    "onEvent": {"evtType": "press", "region": "radio1"},
+                    "target": "radio1_selected",
+                    "actions": [
+                        {"act": "set_image", "region": "radio3", "param": "./images/unselected.png"},
+                        {"act": "set_image", "region": "radio1", "param": "./images/selected.png"}
+                    ]
+                },
+                {
+                    "onEvent": {"evtType": "press", "region": "radio2"},
+                    "target": "radio2_selected",
+                    "actions": [
+                        {"act": "set_image", "region": "radio3", "param": "./images/unselected.png"},
+                        {"act": "set_image", "region": "radio2", "param": "./images/selected.png"}
+                    ]
+                }
+            ]
+        }
+    ]
+}

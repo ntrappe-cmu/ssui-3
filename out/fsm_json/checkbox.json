@@ -1,0 +1,49 @@
+{
+    "regions": [
+        {
+            "name": "checkbox_region",
+            "x": 50, "y": 40, "w": 40, "h": 40, 
+            "imageLoc": "./images/unchecked.png"
+        }
+    ],
+    "states": [
+        {
+            "name" : "unchecked",
+            "transitions" : [
+                {
+                    "onEvent": {
+                        "evtType" : "press",
+                        "region" : "checkbox_region"
+                    },
+                    "target" : "checked",
+                    "actions" : [
+                        {
+                            "act": "set_image",
+                            "region": "checkbox_region",
+                            "param": "./images/checked.png"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name" : "checked",
+            "transitions" : [
+                {
+                    "onEvent": {
+                        "evtType" : "press",
+                        "region" : "checkbox_region"
+                    },
+                    "target" : "unchecked",
+                    "actions" : [
+                        {
+                            "act": "set_image",
+                            "region": "checkbox_region",
+                            "param": "./images/unchecked.png"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
